@@ -27,4 +27,19 @@ Use this if you have already pointed your Domain DNS to the New Server IP.
     *   Run `./install_on_new_server.sh`.
     *   Say **Yes** when asked to generate SSL certificates.
     *   Enter your domain name.
-    *   The script will use Let's Encrypt (Certbot) to generate valid keys and update the config automatically.
+    *   The script will:
+        *   Generator valid keys using Let's Encrypt (Certbot).
+        *   Update `OoklaServer.properties`.
+        *   Configure a **Certbot renewal hook** to auto-restart the server on certificate renewal.
+        *   Install and enable a **Systemd Service** (`ooklaserver.service`) so the server starts on boot.
+
+## Service Management
+
+After installation, the server runs as a systemd service:
+
+```bash
+systemctl start ooklaserver
+systemctl stop ooklaserver
+systemctl restart ooklaserver
+systemctl status ooklaserver
+```

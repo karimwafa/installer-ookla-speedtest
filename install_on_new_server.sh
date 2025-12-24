@@ -73,20 +73,71 @@ if [ "$gen_ssl" = "y" ] || [ "$gen_ssl" = "Y" ]; then
     else
         echo "No domain entered. Skipping SSL generation."
     fi
+    fi
 else
     echo "Skipping SSL generation. Assuming existing certs or migration bundle."
     
     # If using migration bundle (certs/ folder), ensure permissions
     if [ -d "certs" ]; then
         chmod 600 certs/*
-        # Ensure config points to local certs if we are using the migration bundle logic
-        # But if the user just downloaded this script fresh, OoklaServer.properties might be default.
-        # We assume the user creates/edits OoklaServer.properties separately or it came from the bundle.
     fi
 fi
+
+# 5. Setup Auto-Renew Hook
+# We do this if Certbot is installed, regardless of whether we just generated keys or not, 
+# just in case it's a migration that uses system certbot.
+if command -v certbot >/dev/null 2>&1; then
+    echo "Configuring Certbot auto-renewal hook..."
+    mkdir -p /etc/letsencrypt/renewal-hooks/deploy/
+    HOOK_FILE="/etc/letsencrypt/renewal-hooks/deploy/01-ookla-restart.sh"
+    
+    # We use $PWD here assuming the script is run from the installation directory
+    INSTALL_DIR=$(pwd)
+    
+    cat <<EOF > "$HOOK_FILE"
+#!/bin/bash
+# Restart Ookla Speedtest Server after certificate renewal
+cd $INSTALL_DIR
+./ooklaserver.sh restart
+EOF
+    chmod +x "$HOOK_FILE"
+    echo "Renewal hook configured at $HOOK_FILE"
+fi
+
+# 6. Setup Systemd Service
+echo "Setting up Systemd service..."
+INSTALL_DIR=$(pwd)
+SERVICE_FILE="/etc/systemd/system/ooklaserver.service"
+
+cat <<EOF > "$SERVICE_FILE"
+[Unit]
+Description=Ookla Speedtest Server
+After=network.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+WorkingDirectory=$INSTALL_DIR
+ExecStart=$INSTALL_DIR/ooklaserver.sh start
+ExecStop=$INSTALL_DIR/ooklaserver.sh stop
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable ooklaserver
+echo "Systemd service 'ooklaserver' created and enabled."
 
 echo "--------------------------------------------------------"
 echo "Setup Complete!"
 echo "--------------------------------------------------------"
-echo "To start the server, run:"
+echo "To start the server manually, run:"
 echo "  ./ooklaserver.sh start"
+echo ""
+echo "Or use systemd:"
+echo "  systemctl start ooklaserver"
+echo "  systemctl status ooklaserver"
