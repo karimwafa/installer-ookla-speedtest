@@ -11,17 +11,20 @@ This repository contains scripts to help migrate and install an Ookla Speedtest 
 
 ## Usage
 
-### 1. Migrating from an existing server
+### Option A: Complete Migration (Copy Config + Keys)
+Use this if you want to keep the exact same keys and configuration without re-verifying the domain immediately.
 
-1.  Clone this repo or download the scripts to your source server.
-2.  Run `prepare_migration.sh`.
-    *   This will create `ookla-server-migration.tar.gz`.
-    *   **Note**: This bundle contains your **private SSL keys**. Do NOT commit the tarball or the keys to this repository.
-3.  Transfer `ookla-server-migration.tar.gz` to your new server.
-4.  Run `tar -xzvf ookla-server-migration.tar.gz`.
-5.  Run `./install_on_new_server.sh`.
+1.  On Source Server: Run `prepare_migration.sh`.
+2.  Transfer `ookla-server-migration.tar.gz` to New Server.
+3.  On New Server: Extract and run `./install_on_new_server.sh`. Say **No** to generating new keys.
 
-### 2. Fresh Install
+### Option B: Fresh Keys (Generate on New Server)
+Use this if you have already pointed your Domain DNS to the New Server IP.
 
-1.  Run `./ooklaserver.sh install`.
-2.  Edit `OoklaServer.properties` as needed.
+1.  On Source Server: You only need `OoklaServer.properties` if you have custom settings.
+2.  On New Server:
+    *   Clone this repo.
+    *   Run `./install_on_new_server.sh`.
+    *   Say **Yes** when asked to generate SSL certificates.
+    *   Enter your domain name.
+    *   The script will use Let's Encrypt (Certbot) to generate valid keys and update the config automatically.
