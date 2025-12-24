@@ -1,0 +1,7 @@
+# Security: Ignore keys and certs
+*.pem
+*.key
+certs/
+*.tar.gz
+*.pid
+OoklaServer
